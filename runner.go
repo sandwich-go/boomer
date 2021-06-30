@@ -1,6 +1,7 @@
 package boomer
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/rand"
@@ -24,6 +25,8 @@ const (
 	slaveReportInterval = 3 * time.Second
 	heartbeatInterval   = 1 * time.Second
 )
+
+const WorkerNum = "WorkerNum"
 
 type runner struct {
 	state string
@@ -50,7 +53,7 @@ type runner struct {
 
 // safeRun runs fn and recovers from unexpected panics.
 // it prevents panics from Task.Fn crashing boomer.
-func (r *runner) safeRun(fn func()) {
+func (r *runner) safeRun(ctx context.Context, fn func(context.Context)) {
 	defer func() {
 		// don't panic
 		err := recover()
@@ -62,7 +65,7 @@ func (r *runner) safeRun(fn func()) {
 			os.Stderr.Write(stackTrace)
 		}
 	}()
-	fn()
+	fn(ctx)
 }
 
 func (r *runner) addOutput(o Output) {
@@ -130,7 +133,8 @@ func (r *runner) spawnWorkers(spawnCount int, quit chan bool, spawnCompleteFunc 
 			return
 		default:
 			atomic.AddInt32(&r.numClients, 1)
-			go func() {
+			go func(num int) {
+				ctx := context.WithValue(context.Background(), WorkerNum, num)
 				for {
 					select {
 					case <-quit:
@@ -140,15 +144,15 @@ func (r *runner) spawnWorkers(spawnCount int, quit chan bool, spawnCompleteFunc 
 							blocked := r.rateLimiter.Acquire()
 							if !blocked {
 								task := r.getTask()
-								r.safeRun(task.Fn)
+								r.safeRun(ctx, task.Fn)
 							}
 						} else {
 							task := r.getTask()
-							r.safeRun(task.Fn)
+							r.safeRun(ctx, task.Fn)
 						}
 					}
 				}
-			}()
+			}(i)
 		}
 	}
 	
