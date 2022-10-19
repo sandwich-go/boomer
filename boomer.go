@@ -9,12 +9,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/asaskevich/EventBus"
 )
-
-// Events is the global event bus instance.
-var Events = EventBus.New()
 
 var defaultBoomer = &Boomer{}
 
@@ -41,10 +36,10 @@ type Boomer struct {
 	spawnCount  int
 	spawnRate   float64
 
-	cpuProfile         string
+	cpuProfileFile     string
 	cpuProfileDuration time.Duration
 
-	memoryProfile         string
+	memoryProfileFile     string
 	memoryProfileDuration time.Duration
 
 	outputs []Output
@@ -92,27 +87,27 @@ func (b *Boomer) AddOutput(o Output) {
 }
 
 // EnableCPUProfile will start cpu profiling after run.
-func (b *Boomer) EnableCPUProfile(cpuProfile string, duration time.Duration) {
-	b.cpuProfile = cpuProfile
+func (b *Boomer) EnableCPUProfile(cpuProfileFile string, duration time.Duration) {
+	b.cpuProfileFile = cpuProfileFile
 	b.cpuProfileDuration = duration
 }
 
 // EnableMemoryProfile will start memory profiling after run.
-func (b *Boomer) EnableMemoryProfile(memoryProfile string, duration time.Duration) {
-	b.memoryProfile = memoryProfile
+func (b *Boomer) EnableMemoryProfile(memoryProfileFile string, duration time.Duration) {
+	b.memoryProfileFile = memoryProfileFile
 	b.memoryProfileDuration = duration
 }
 
 // Run accepts a slice of Task and connects to the locust master.
 func (b *Boomer) Run(tasks ...*Task) {
-	if b.cpuProfile != "" {
-		err := StartCPUProfile(b.cpuProfile, b.cpuProfileDuration)
+	if b.cpuProfileFile != "" {
+		err := StartCPUProfile(b.cpuProfileFile, b.cpuProfileDuration)
 		if err != nil {
 			log.Printf("Error starting cpu profiling, %v", err)
 		}
 	}
-	if b.memoryProfile != "" {
-		err := StartMemoryProfile(b.memoryProfile, b.memoryProfileDuration)
+	if b.memoryProfileFile != "" {
+		err := StartMemoryProfile(b.memoryProfileFile, b.memoryProfileDuration)
 		if err != nil {
 			log.Printf("Error starting memory profiling, %v", err)
 		}
@@ -184,7 +179,7 @@ func (b *Boomer) RecordFailure(requestType, name string, responseTime int64, exc
 
 // Quit will send a quit message to the master.
 func (b *Boomer) Quit() {
-	Events.Publish("boomer:quit")
+	Events.Publish(EVENT_QUIT)
 	var ticker = time.NewTicker(3 * time.Second)
 
 	switch b.mode {
@@ -197,9 +192,9 @@ func (b *Boomer) Quit() {
 			log.Println("Timeout waiting for sending quit message to master, boomer will quit any way.")
 			break
 		}
-		b.slaveRunner.close()
+		b.slaveRunner.shutdown()
 	case StandaloneMode:
-		b.localRunner.close()
+		b.localRunner.shutdown()
 	}
 }
 
@@ -241,21 +236,21 @@ func Run(tasks ...*Task) {
 	defaultBoomer.SetRateLimiter(rateLimiter)
 	defaultBoomer.masterHost = masterHost
 	defaultBoomer.masterPort = masterPort
-	defaultBoomer.EnableMemoryProfile(memoryProfile, memoryProfileDuration)
-	defaultBoomer.EnableCPUProfile(cpuProfile, cpuProfileDuration)
+	defaultBoomer.EnableMemoryProfile(memoryProfileFile, memoryProfileDuration)
+	defaultBoomer.EnableCPUProfile(cpuProfileFile, cpuProfileDuration)
 
 	defaultBoomer.Run(tasks...)
 
 	quitByMe := false
 	quitChan := make(chan bool)
 
-	Events.SubscribeOnce("boomer:quit", func() {
+	Events.SubscribeOnce(EVENT_QUIT, func() {
 		if !quitByMe {
 			close(quitChan)
 		}
 	})
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
 	select {

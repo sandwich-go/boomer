@@ -13,11 +13,36 @@ Standalone
 When running in standalone mode, boomer doesn't need to connect to a locust master
 and start testing immediately.
 
-By default, the standalone mode works with a ConsoleOutput, which will print the
-test result to the console, you can write you own output and add more by calling
-boomer.AddOutput().
+You can write you own output and add more by calling boomer.AddOutput().
 
-.. literalinclude:: ../../examples/standalone/standalone.go
+Here is an example for writting to stdout.
+
+.. code-block:: go
+
+   AddOutput(new boomer.NewConsoleOutput())
+
+Here is an example for pushing output to Prometheus Pushgateway.
+
+.. code-block:: go
+
+   var globalBoomer *boomer.Boomer
+
+   func main() {
+      task1 := &boomer.Task{
+         Name:   "foo",
+         Weight: 10,
+         Fn:     foo,
+      }
+
+      numClients := 10
+      spawnRate := float64(10)
+      globalBoomer = boomer.NewStandaloneBoomer(numClients, spawnRate)
+      globalBoomer.AddOutput(boomer.NewPrometheusPusherOutput("http://localhost:9091", "hrp"))
+      globalBoomer.Run(task1)
+   }
+
+
+.. literalinclude:: ../../_examples/standalone/standalone.go
    :language: go
    :linenos:
    :emphasize-lines: 33

@@ -10,11 +10,24 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/process"
 )
+
+func castToInt64(num interface{}) (ret int64, ok bool) {
+	t_int64, ok := num.(int64)
+	if ok {
+		return t_int64, true
+	}
+	t_uint64, ok := num.(uint64)
+	if ok {
+		return int64(t_uint64), true
+	}
+	return int64(0), false
+}
 
 func round(val float64, roundOn float64, places int) (newVal float64) {
 	var round float64
@@ -37,6 +50,22 @@ func MD5(slice ...string) string {
 		io.WriteString(h, v)
 	}
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+// waitTimeout waits for the waitgroup for the specified max timeout.
+// Returns true if waiting timed out.
+func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false // completed normally
+	case <-time.After(timeout):
+		return true // timed out
+	}
 }
 
 // generate a random nodeID like locust does, using the same algorithm.

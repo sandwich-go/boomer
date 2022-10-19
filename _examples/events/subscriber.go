@@ -20,15 +20,19 @@ func foo() {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	boomer.Events.Subscribe("boomer:spawn", func(workers int, spawnRate float64) {
+	boomer.Events.Subscribe(boomer.EVENT_CONNECTED, func() {
+		log.Println("The master sends an ack message")
+	})
+
+	boomer.Events.Subscribe(boomer.EVENT_SPAWN, func(workers int, spawnRate float64) {
 		log.Println("The master asks me to spawn", workers, "goroutines with a spawn rate of", spawnRate, "per second.")
 	})
 
-	boomer.Events.Subscribe("boomer:stop", func() {
+	boomer.Events.Subscribe(boomer.EVENT_STOP, func() {
 		log.Println("The master asks me to stop.")
 	})
 
-	boomer.Events.Subscribe("boomer:quit", func() {
+	boomer.Events.Subscribe(boomer.EVENT_QUIT, func() {
 		log.Println("Boomer is quitting now, may be the master asks it to do so, or it receives one of SIGINT and SIGTERM.")
 	})
 
