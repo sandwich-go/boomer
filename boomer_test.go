@@ -1,6 +1,7 @@
 package boomer
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -118,7 +119,7 @@ func TestStandaloneRun(t *testing.T) {
 	count := int64(0)
 	taskA := &Task{
 		Name: "increaseCount",
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			atomic.AddInt64(&count, 1)
 			runtime.Goexit()
 		},
@@ -164,7 +165,7 @@ func TestDistributedRun(t *testing.T) {
 	count := int64(0)
 	taskA := &Task{
 		Name: "increaseCount",
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			atomic.AddInt64(&count, 1)
 			runtime.Goexit()
 		},
@@ -191,13 +192,13 @@ func TestRunTasksForTest(t *testing.T) {
 	count := 0
 	taskA := &Task{
 		Name: "increaseCount",
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			count++
 		},
 	}
 	taskWithoutName := &Task{
 		Name: "",
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			count++
 		},
 	}
@@ -215,7 +216,7 @@ func TestRunTasksForTest(t *testing.T) {
 func TestRunTasksWithBoomerReport(t *testing.T) {
 	taskA := &Task{
 		Name: "report",
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			// it should not panic.
 			RecordSuccess("http", "foo", int64(1), int64(10))
 			RecordFailure("udp", "bar", int64(1), "udp error")
@@ -287,7 +288,7 @@ func TestRun(t *testing.T) {
 	count := int64(0)
 	taskA := &Task{
 		Name: "increaseCount",
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			atomic.AddInt64(&count, 1)
 			runtime.Goexit()
 		},

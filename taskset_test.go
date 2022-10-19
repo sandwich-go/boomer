@@ -1,6 +1,7 @@
 package boomer
 
 import (
+	"context"
 	"reflect"
 	"testing"
 )
@@ -12,7 +13,7 @@ func TestWeighingTaskSetWithSingleTask(t *testing.T) {
 	taskA := &Task{
 		Name:   "A",
 		Weight: 1,
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			taskAIsRun = true
 		},
 	}
@@ -100,21 +101,21 @@ func TestSmoothRoundRobinTaskSetRun(t *testing.T) {
 	taskA := &Task{
 		Name:   "A",
 		Weight: 5,
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			results = append(results, "A")
 		},
 	}
 	taskB := &Task{
 		Name:   "B",
 		Weight: 1,
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			results = append(results, "B")
 		},
 	}
 	taskC := &Task{
 		Name:   "C",
 		Weight: 1,
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			results = append(results, "C")
 		},
 	}

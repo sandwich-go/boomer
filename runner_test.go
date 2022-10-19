@@ -1,6 +1,7 @@
 package boomer
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -28,8 +29,9 @@ func (o *HitOutput) OnStop() {
 }
 
 func TestSafeRun(t *testing.T) {
+	ctx := context.Background()
 	runner := &runner{}
-	runner.safeRun(func() {
+	runner.safeRun(ctx, func(ctx context.Context) {
 		panic("Runner will catch this panic")
 	})
 }
@@ -82,7 +84,7 @@ func TestOutputOnStop(t *testing.T) {
 func TestLocalRunner(t *testing.T) {
 	taskA := &Task{
 		Weight: 10,
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(time.Second)
 		},
 		Name: "TaskA",
@@ -97,7 +99,7 @@ func TestLocalRunner(t *testing.T) {
 func TestSpawnWorkers(t *testing.T) {
 	taskA := &Task{
 		Weight: 10,
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(time.Second)
 		},
 		Name: "TaskA",
@@ -126,7 +128,7 @@ func TestSpawnWorkersWithManyTasks(t *testing.T) {
 		return &Task{
 			Name:   name,
 			Weight: weight,
-			Fn: func() {
+			Fn: func(ctx context.Context) {
 				lock.Lock()
 				taskCalls[name]++
 				lock.Unlock()
@@ -193,7 +195,7 @@ func TestSpawnWorkersWithManyTasksInWeighingTaskSet(t *testing.T) {
 		return &Task{
 			Name:   name,
 			Weight: weight,
-			Fn: func() {
+			Fn: func(ctx context.Context) {
 				lock.Lock()
 				taskCalls[name]++
 				lock.Unlock()
@@ -210,7 +212,9 @@ func TestSpawnWorkersWithManyTasksInWeighingTaskSet(t *testing.T) {
 
 	task := &Task{
 		Name: "TaskSetWrapperTask",
-		Fn:   wts.Run,
+		Fn: func(ctx context.Context) {
+			wts.Run()
+		},
 	}
 
 	runner := newSlaveRunner("localhost", 5557, []*Task{task}, nil)
@@ -269,12 +273,12 @@ func TestSpawnWorkersWithManyTasksInWeighingTaskSet(t *testing.T) {
 
 func TestSpawnAndStop(t *testing.T) {
 	taskA := &Task{
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(time.Second)
 		},
 	}
 	taskB := &Task{
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(2 * time.Second)
 		},
 	}
@@ -308,7 +312,7 @@ func TestSpawnAndStop(t *testing.T) {
 
 func TestStop(t *testing.T) {
 	taskA := &Task{
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(time.Second)
 		},
 	}
@@ -332,7 +336,7 @@ func TestStop(t *testing.T) {
 
 func TestOnSpawnMessage(t *testing.T) {
 	taskA := &Task{
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(time.Second)
 		},
 	}
@@ -419,12 +423,12 @@ func TestOnQuitMessage(t *testing.T) {
 
 func TestOnMessage(t *testing.T) {
 	taskA := &Task{
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(time.Second)
 		},
 	}
 	taskB := &Task{
-		Fn: func() {
+		Fn: func(ctx context.Context) {
 			time.Sleep(2 * time.Second)
 		},
 	}

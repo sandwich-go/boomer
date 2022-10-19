@@ -26,7 +26,11 @@ const (
 	heartbeatInterval   = 1 * time.Second
 )
 
-const WorkerNum = "WorkerNum"
+type spawnNumber struct{}
+
+func (*spawnNumber) String() string { return "spawn_number" }
+
+var ContextSpawnNumberKey = spawnNumber(struct{}{})
 
 type runner struct {
 	state string
@@ -136,7 +140,7 @@ func (r *runner) spawnWorkers(spawnCount int, quit chan bool, spawnCompleteFunc 
 		default:
 			atomic.AddInt32(&r.numClients, 1)
 			go func(num int) {
-				ctx := context.WithValue(context.Background(), WorkerNum, num)
+				ctx := context.WithValue(context.Background(), ContextSpawnNumberKey, num)
 				for {
 					select {
 					case <-quit:
