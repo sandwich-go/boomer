@@ -122,10 +122,6 @@ github.com/ugorji/go/codec v1.2.6 h1:7kbGefxLoDBuYXOms4yD7223OpNMMPNPZxXk5TvFcyQ
 github.com/ugorji/go/codec v1.2.6/go.mod h1:V6TCNZ4PHqoHGFZuSG1W8nrCzzdgA2DozYxWFFpvxTw=
 github.com/zeromq/goczmq v0.0.0-20190906225145-a7546843a315 h1:Mnki1bwiVDLVh9/gMqjI+3MdbVmAbswzayK/bzRmNaE=
 github.com/zeromq/goczmq v0.0.0-20190906225145-a7546843a315/go.mod h1:jBJgSEDlcqrdShbpgYc2S+mTo1Rs6pac+8zpUQFgsvg=
-github.com/zeromq/gomq v0.0.0-20201031135124-cef4e507bb8e h1:vGjfCnWv/zWeO1ivv4+OUPgTzG/WV1iGfZwVdtUpLkM=
-github.com/zeromq/gomq v0.0.0-20201031135124-cef4e507bb8e/go.mod h1:SkCxcSQ7BQEA9FvDzbj+3hV6EMhSywyxWnHwUXVIyLY=
-github.com/zeromq/gomq/zmtp v0.0.0-20201031135124-cef4e507bb8e h1:pjp04/sSr2TYuaPdt+u6Cc1M38Aocp+3er0akr3auFg=
-github.com/zeromq/gomq/zmtp v0.0.0-20201031135124-cef4e507bb8e/go.mod h1:LBjWEodY/ESvKRwLw3bc7mhn49oiI8qlXUqeqLn0pcU=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=

@@ -202,6 +202,6 @@ func (ts *SmoothRoundRobinTaskSet) GetWeight() (weight int) {
 func (ts *SmoothRoundRobinTaskSet) Run() {
 	task := ts.GetTask()
 	if task != nil {
-		task.Fn()
+		task.Fn(context.Background())
 	}
 }
