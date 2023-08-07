@@ -32,6 +32,12 @@ func (*spawnNumber) String() string { return "spawn_number" }
 
 var ContextSpawnNumberKey = spawnNumber(struct{}{})
 
+type spawnCount struct{}
+
+func (*spawnCount) String() string { return "spawn_count" }
+
+var ContextSpawnCountKey = spawnCount(struct{}{})
+
 type runner struct {
 	state string
 
@@ -141,6 +147,7 @@ func (r *runner) spawnWorkers(spawnCount int, quit chan bool, spawnCompleteFunc 
 			atomic.AddInt32(&r.numClients, 1)
 			go func(num int) {
 				ctx := context.WithValue(context.Background(), ContextSpawnNumberKey, num)
+				ctx = context.WithValue(ctx, ContextSpawnCountKey, spawnCount)
 				for {
 					select {
 					case <-quit:
@@ -414,7 +421,6 @@ func (r *slaveRunner) onMessage(msgInterface message) {
 		log.Println("Receive unknown type of meesage from master.")
 		return
 	}
-
 	switch r.state {
 	case stateInit:
 		switch msg.Type {
