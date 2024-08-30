@@ -1,4 +1,4 @@
-module github.com/lenonqing/boomer
+module github.com/sandwich-go/boomer
 
 go 1.21
 
