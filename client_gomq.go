@@ -4,14 +4,16 @@
 package boomer
 
 import (
+	"context"
 	"fmt"
-	"github.com/sandwich-go/boost/retry"
-	"github.com/sandwich-go/boost/xsync"
 	"log"
 	"sync"
 
-	"github.com/myzhan/gomq"
-	"github.com/myzhan/gomq/zmtp"
+	"github.com/sandwich-go/boost/retry"
+	"github.com/sandwich-go/boost/xsync"
+
+	"github.com/sandwich-go/gomq"
+	"github.com/sandwich-go/gomq/zmtp"
 )
 
 type gomqSocketClient struct {
@@ -42,13 +44,13 @@ func newClient(masterHost string, masterPort int, identity string) (client *gomq
 	return client
 }
 
-func (c *gomqSocketClient) connect() (err error) {
+func (c *gomqSocketClient) connect(ctx context.Context) (err error) {
 	c.shutdownChan = make(chan bool)
 	addr := fmt.Sprintf("tcp://%s:%d", c.masterHost, c.masterPort)
 	c.dealerSocket = gomq.NewDealer(zmtp.NewSecurityNull(), c.identity)
 	c.state.Set(1)
 
-	if err = c.dealerSocket.Connect(addr); err != nil {
+	if err = c.dealerSocket.Connect(ctx, addr); err != nil {
 		log.Println("Error connecting to master:", err)
 		return err
 	}
@@ -65,7 +67,7 @@ func (c *gomqSocketClient) reconnect() error {
 	c.close()
 	return retry.Do(
 		func(attempt uint) error {
-			return c.connect()
+			return c.connect(context.Background())
 		},
 		retry.WithOnRetry(func(attempt uint, err error) {
 			log.Printf("Attempt %d to reconnect to master: %s\n", attempt, err)

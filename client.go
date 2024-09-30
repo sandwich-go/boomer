@@ -1,7 +1,9 @@
 package boomer
 
+import "context"
+
 type client interface {
-	connect() (err error)
+	connect(ctx context.Context) (err error)
 	close()
 	recvChannel() chan message
 	sendChannel() chan message

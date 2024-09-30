@@ -1,8 +1,10 @@
+//go:build goczmq
 // +build goczmq
 
 package boomer
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -37,7 +39,7 @@ func newClient(masterHost string, masterPort int, identity string) (client *czmq
 	return client
 }
 
-func (c *czmqSocketClient) connect() (err error) {
+func (c *czmqSocketClient) connect(ctx context.Context) (err error) {
 	addr := fmt.Sprintf("tcp://%s:%d", c.masterHost, c.masterPort)
 	dealer := goczmq.NewSock(goczmq.Dealer)
 	dealer.SetOption(goczmq.SockSetIdentity(c.identity))

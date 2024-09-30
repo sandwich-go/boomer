@@ -175,7 +175,7 @@ func newLocalRunner(spawnChan chan *SpawnArgs, spawnCount int, spawnRate int) (r
 	return r
 }
 
-func (r *localRunner) run() {
+func (r *localRunner) run(ctx context.Context) error {
 	r.state = stateInit
 	r.stats.start()
 	r.outputOnStart()
@@ -183,6 +183,11 @@ func (r *localRunner) run() {
 	go func() {
 		for {
 			select {
+			case <-ctx.Done():
+				Events.Publish(EVENT_QUIT)
+				r.stop()
+				r.outputOnStop()
+				return
 			case data := <-r.stats.messageToRunnerChan:
 				data["user_count"] = r.numClients
 				r.outputOnEevent(data)
@@ -202,6 +207,7 @@ func (r *localRunner) run() {
 			}
 		}
 	}()
+	return nil
 }
 
 func (r *localRunner) shutdown() {
@@ -385,18 +391,18 @@ func (r *slaveRunner) startListener() {
 	}()
 }
 
-func (r *slaveRunner) run() {
+func (r *slaveRunner) run(ctx context.Context) error {
 	r.state = stateInit
 	r.client = newClient(r.masterHost, r.masterPort, r.nodeID)
 
-	err := r.client.connect()
+	err := r.client.connect(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), "Socket type DEALER is not compatible with PULL") {
 			log.Println("Newer version of locust changes ZMQ socket to DEALER and ROUTER, you should update your locust version.")
 		} else {
 			log.Printf("Failed to connect to master(%s:%d) with error %v\n", r.masterHost, r.masterPort, err)
 		}
-		return
+		return err
 	}
 
 	// listen to master
@@ -446,4 +452,5 @@ func (r *slaveRunner) run() {
 	})
 
 	Events.Subscribe(EVENT_QUIT, r.onQuiting)
+	return nil
 }

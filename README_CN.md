@@ -34,7 +34,7 @@ $ go build -tags 'goczmq' -o a.out main.go
 如果使用 gomq 编译失败，先尝试更新 gomq 的版本。
 
 ```bash
-$ go get -u github.com/myzhan/gomq
+$ go get -u github.com/sandwich-go/gomq
 ```
 
 ## 例子(main.go)

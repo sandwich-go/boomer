@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/sandwich-go/boost/xerror"
 )
 
 var defaultBoomer = &Boomer{}
@@ -98,7 +100,7 @@ func (b *Boomer) EnableMemoryProfile(memoryProfileFile string, duration time.Dur
 }
 
 // Run accepts a slice of Task and connects to the locust master.
-func (b *Boomer) Run(spawnChan chan *SpawnArgs) {
+func (b *Boomer) Run(ctx context.Context, spawnChan chan *SpawnArgs) (err error) {
 	if b.cpuProfileFile != "" {
 		err := StartCPUProfile(b.cpuProfileFile, b.cpuProfileDuration)
 		if err != nil {
@@ -118,16 +120,17 @@ func (b *Boomer) Run(spawnChan chan *SpawnArgs) {
 		for _, o := range b.outputs {
 			b.slaveRunner.addOutput(o)
 		}
-		b.slaveRunner.run()
+		err = b.slaveRunner.run(ctx)
 	case StandaloneMode:
 		b.localRunner = newLocalRunner(spawnChan, b.spawnCount, b.spawnRate)
 		for _, o := range b.outputs {
 			b.localRunner.addOutput(o)
 		}
-		b.localRunner.run()
+		err = b.localRunner.run(ctx)
 	default:
-		log.Println("Invalid mode, expected boomer.DistributedMode or boomer.StandaloneMode")
+		return xerror.NewText("Invalid mode, expected boomer.DistributedMode or boomer.StandaloneMode")
 	}
+	return
 }
 
 // RecordSuccess reports a success.
@@ -216,7 +219,7 @@ func runTasksForTest(tasks ...*Task) {
 
 // Run accepts a slice of Task and connects to a locust master.
 // It's a convenience function to use the defaultBoomer.
-func Run(spawnChan chan *SpawnArgs) {
+func Run(ctx context.Context, spawnChan chan *SpawnArgs) {
 	if !flag.Parsed() {
 		flag.Parse()
 	}
@@ -228,7 +231,7 @@ func Run(spawnChan chan *SpawnArgs) {
 	defaultBoomer.EnableMemoryProfile(memoryProfileFile, memoryProfileDuration)
 	defaultBoomer.EnableCPUProfile(cpuProfileFile, cpuProfileDuration)
 
-	defaultBoomer.Run(spawnChan)
+	defaultBoomer.Run(ctx, spawnChan)
 
 	quitByMe := false
 	quitChan := make(chan bool)

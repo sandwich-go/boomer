@@ -1,3 +1,4 @@
+//go:build !goczmq
 // +build !goczmq
 
 package boomer
@@ -12,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/myzhan/gomq"
-	"github.com/myzhan/gomq/zmtp"
+	"github.com/sandwich-go/gomq"
+	"github.com/sandwich-go/gomq/zmtp"
 )
 
 // Router is a gomq interface used for router sockets.
