@@ -6,8 +6,9 @@ package boomer
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
+
+	"github.com/sandwich-go/boost"
 
 	"github.com/sandwich-go/boost/retry"
 	"github.com/sandwich-go/boost/xsync"
@@ -32,7 +33,7 @@ type gomqSocketClient struct {
 }
 
 func newClient(masterHost string, masterPort int, identity string) (client *gomqSocketClient) {
-	log.Println("Boomer is built with gomq support.")
+	boost.LogInfo("Boomer is built with gomq support.")
 	client = &gomqSocketClient{
 		masterHost:             masterHost,
 		masterPort:             masterPort,
@@ -51,11 +52,11 @@ func (c *gomqSocketClient) connect(ctx context.Context) (err error) {
 	c.state.Set(1)
 
 	if err = c.dealerSocket.Connect(ctx, addr); err != nil {
-		log.Println("Error connecting to master:", err)
+		boost.LogInfof("Error connecting to master: %v", err)
 		return err
 	}
 
-	log.Printf("Boomer is connected to master(%s) press Ctrl+c to quit.\n", addr)
+	boost.LogInfof("Boomer is connected to master(%s) press Ctrl+c to quit.\n", addr)
 	c.wg.Add(2)
 	go c.recv()
 	go c.send()
@@ -70,7 +71,7 @@ func (c *gomqSocketClient) reconnect() error {
 			return c.connect(context.Background())
 		},
 		retry.WithOnRetry(func(attempt uint, err error) {
-			log.Printf("Attempt %d to reconnect to master: %s\n", attempt, err)
+			boost.LogInfof("Attempt %d to reconnect to master: %s\n", attempt, err)
 		}),
 	)
 }
@@ -107,21 +108,21 @@ func (c *gomqSocketClient) recv() {
 			}
 			body, err := msg.Body[0], msg.Err
 			if err != nil {
-				log.Printf("Error reading: %v, attempting to reconnect...\n", err)
+				boost.LogInfof("Error reading: %v, attempting to reconnect...\n", err)
 				go func() {
 					if err := c.reconnect(); err != nil {
-						log.Printf("Reconnection failed: %v\n", err)
+						boost.LogInfof("Reconnection failed: %v\n", err)
 					}
 				}()
 				continue
 			}
 			decodedMsg, err := newGenericMessageFromBytes(body)
 			if err != nil {
-				log.Printf("Msgpack decode fail: %v\n", err)
+				boost.LogInfof("Msgpack decode fail: %v\n", err)
 				continue
 			}
 			if decodedMsg.NodeID != c.identity {
-				log.Printf("Recv a %s message for node(%s), not for me(%s), dropped.\n", decodedMsg.Type, decodedMsg.NodeID, c.identity)
+				boost.LogInfof("Recv a %s message for node(%s), not for me(%s), dropped.\n", decodedMsg.Type, decodedMsg.NodeID, c.identity)
 				continue
 			}
 			c.fromMaster <- decodedMsg
@@ -142,10 +143,10 @@ func (c *gomqSocketClient) send() {
 		case msg := <-c.toMaster:
 			err := c.sendMessage(msg)
 			if err != nil {
-				log.Printf("Error sending: %v, attempting to reconnect...\n", err)
+				boost.LogInfof("Error sending: %v, attempting to reconnect...\n", err)
 				go func() {
 					if err := c.reconnect(); err != nil {
-						log.Printf("Reconnection failed: %v\n", err)
+						boost.LogInfof("Reconnection failed: %v\n", err)
 					}
 				}()
 				continue
@@ -164,12 +165,12 @@ func (c *gomqSocketClient) send() {
 func (c *gomqSocketClient) sendMessage(msg message) error {
 	serializedMessage, err := msg.serialize()
 	if err != nil {
-		log.Printf("Msgpack encode fail: %v\n", err)
+		boost.LogInfof("Msgpack encode fail: %v\n", err)
 		return err
 	}
 	err = c.dealerSocket.Send(serializedMessage)
 	if err != nil {
-		log.Printf("Error sending: %v\n", err)
+		boost.LogInfof("Error sending: %v\n", err)
 	}
 	return err
 }

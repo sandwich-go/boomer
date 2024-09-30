@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sandwich-go/boost"
+
 	"github.com/sandwich-go/boost/xerror"
 )
 
@@ -78,7 +80,7 @@ func (b *Boomer) SetMode(mode Mode) {
 	case StandaloneMode:
 		b.mode = StandaloneMode
 	default:
-		log.Println("Invalid mode, ignored!")
+		boost.LogInfo("Invalid mode, ignored!")
 	}
 }
 
@@ -191,7 +193,7 @@ func (b *Boomer) Quit() {
 		case <-b.slaveRunner.client.disconnectedChannel():
 			break
 		case <-ticker.C:
-			log.Println("Timeout waiting for sending quit message to master, boomer will quit any way.")
+			boost.LogInfo("Timeout waiting for sending quit message to master, boomer will quit any way.")
 			break
 		}
 		b.slaveRunner.shutdown()
@@ -209,7 +211,7 @@ func runTasksForTest(tasks ...*Task) {
 		} else {
 			for _, name := range taskNames {
 				if name == task.Name {
-					log.Println("Running " + task.Name)
+					boost.LogInfo("Running " + task.Name)
 					task.Fn(context.Background())
 				}
 			}
@@ -252,7 +254,7 @@ func Run(ctx context.Context, spawnChan chan *SpawnArgs) {
 	case <-quitChan:
 	}
 
-	log.Println("shut down")
+	boost.LogInfo("shut down")
 }
 
 // RecordSuccess reports a success.

@@ -3,12 +3,13 @@ package boomer
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sandwich-go/boost"
 
 	"github.com/sandwich-go/boost/xpanic"
 )
@@ -134,7 +135,7 @@ func (r *runner) startSpawning(spawnCount int, spawnRate float64, spawnCompleteF
 	r.stopChan = make(chan bool)
 	r.numClients = spawnCount
 
-	log.Println("Spawning", spawnCount, "clients immediately")
+	boost.LogInfof("Spawning %d clients immediately", spawnCount)
 	select {
 	case <-r.spawnChan:
 	default:
@@ -142,7 +143,7 @@ func (r *runner) startSpawning(spawnCount int, spawnRate float64, spawnCompleteF
 	select {
 	case r.spawnChan <- &SpawnArgs{Count: spawnCount, Rate: spawnRate}:
 	default:
-		log.Println("Failed to send spawn message to logic")
+		boost.LogInfo("Failed to send spawn message to logic")
 	}
 	if spawnCompleteFunc != nil {
 		spawnCompleteFunc()
@@ -276,7 +277,7 @@ func (r *slaveRunner) sumUsersAmount(msg *genericMessage) int {
 		c, ok := class.(string)
 		n, ok2 := castToInt64(num)
 		if !ok || !ok2 {
-			log.Printf("user_classes_count in spawn message can't be casted to map[string]int64, current type is map[%T]%T, ignored!\n", class, num)
+			boost.LogInfof("user_classes_count in spawn message can't be casted to map[string]int64, current type is map[%T]%T, ignored!\n", class, num)
 			continue
 		}
 		r.userClassesCountFromMaster[c] = n
@@ -293,7 +294,7 @@ func (r *slaveRunner) onSpawnMessage(msg *genericMessage) {
 	if timeStamp, ok := msg.Data["timestamp"]; ok {
 		if timeStampInt64, ok := castToInt64(timeStamp); ok {
 			if timeStampInt64 <= r.lastReceivedSpawnTimestamp {
-				log.Println("Discard spawn message with older or equal timestamp than timestamp of previous spawn message")
+				boost.LogInfo("Discard spawn message with older or equal timestamp than timestamp of previous spawn message")
 				return
 			} else {
 				r.lastReceivedSpawnTimestamp = timeStampInt64
@@ -319,7 +320,7 @@ func (r *slaveRunner) sendClientReadyAndWaitForAck() {
 
 	go func() {
 		if waitTimeout(&r.waitForAck, 5*time.Second) {
-			log.Println("Timeout waiting for ack message from master, you may use a locust version before 2.10.0 or have a network issue.")
+			boost.LogInfo("Timeout waiting for ack message from master, you may use a locust version before 2.10.0 or have a network issue.")
 		}
 	}()
 }
@@ -328,7 +329,7 @@ func (r *slaveRunner) sendClientReadyAndWaitForAck() {
 func (r *slaveRunner) onMessage(msgInterface message) {
 	msg, ok := msgInterface.(*genericMessage)
 	if !ok {
-		log.Println("Receive unknown type of meesage from master.")
+		boost.LogInfo("Receive unknown type of meesage from master.")
 		return
 	}
 	switch r.state {
@@ -354,14 +355,14 @@ func (r *slaveRunner) onMessage(msgInterface message) {
 		case "stop":
 			r.stop()
 			r.state = stateStopped
-			log.Println("Recv stop message from master, all the goroutines are stopped")
+			boost.LogInfo("Recv stop message from master, all the goroutines are stopped")
 			r.client.sendChannel() <- newGenericMessage("client_stopped", nil, r.nodeID)
 			r.sendClientReadyAndWaitForAck()
 			Events.Publish(EVENT_STOPROBOT)
 			r.state = stateInit
 		case "quit":
 			r.stop()
-			log.Println("Recv quit message from master, all the goroutines are stopped")
+			boost.LogInfo("Recv quit message from master, all the goroutines are stopped")
 			Events.Publish(EVENT_QUIT)
 			r.state = stateInit
 		}
@@ -398,9 +399,9 @@ func (r *slaveRunner) run(ctx context.Context) error {
 	err := r.client.connect(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), "Socket type DEALER is not compatible with PULL") {
-			log.Println("Newer version of locust changes ZMQ socket to DEALER and ROUTER, you should update your locust version.")
+			boost.LogInfo("Newer version of locust changes ZMQ socket to DEALER and ROUTER, you should update your locust version.")
 		} else {
-			log.Printf("Failed to connect to master(%s:%d) with error %v\n", r.masterHost, r.masterPort, err)
+			boost.LogInfof("Failed to connect to master(%s:%d) with error %v\n", r.masterHost, r.masterPort, err)
 		}
 		return err
 	}
