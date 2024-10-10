@@ -50,10 +50,6 @@ type runner struct {
 	spawnRate  int
 	spawnChan  chan *SpawnArgs
 
-	// all running workers(goroutines) will select on this channel.
-	// close this channel will stop all running workers.
-	stopChan chan bool
-
 	// close this channel will stop all goroutines used in runner, including running workers.
 	shutdownChan chan bool
 
@@ -132,7 +128,6 @@ func (r *runner) outputOnStop() {
 func (r *runner) startSpawning(spawnCount int, spawnRate float64, spawnCompleteFunc func()) {
 	Events.Publish(EVENT_SPAWN, spawnCount, spawnRate)
 
-	r.stopChan = make(chan bool)
 	r.numClients = spawnCount
 
 	boost.LogInfof("Spawning %d clients immediately", spawnCount)
@@ -154,10 +149,6 @@ func (r *runner) stop() {
 	// publish the boomer stop event
 	// user's code can subscribe to this event and do thins like cleaning up
 	Events.Publish(EVENT_STOP)
-
-	// stop previous goroutines without blocking
-	// those goroutines will exit when r.safeRun returns
-	close(r.stopChan)
 }
 
 type localRunner struct {
@@ -350,7 +341,6 @@ func (r *slaveRunner) onMessage(msgInterface message) {
 		switch msg.Type {
 		case "spawn":
 			r.state = stateSpawning
-			r.stop()
 			r.onSpawnMessage(msg)
 		case "stop":
 			r.stop()
